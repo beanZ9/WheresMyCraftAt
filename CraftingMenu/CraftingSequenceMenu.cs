@@ -1418,9 +1418,9 @@ public static class CraftingSequenceMenu
         DebugWindow.LogMsg($"[GenerateLinqQuery] Generating query for coeId {coeId} and modName {cleanModName}");
         var lowerId = coeId.ToLowerInvariant();
         
-        if (lowerId == "open_prefix") return "ModsInfo.Prefixes.Count < 3";
-        if (lowerId == "open_suffix") return "ModsInfo.Suffixes.Count < 3";
-        if (lowerId == "open_affix") return "ModsInfo.Prefixes.Count < 3 || ModsInfo.Suffixes.Count < 3";
+        if (lowerId == "open_prefix") return "ModsInfo.Prefixes.Count < (Rarity == ItemRarity.Magic ? 1 : 3)";
+        if (lowerId == "open_suffix") return "ModsInfo.Suffixes.Count < (Rarity == ItemRarity.Magic ? 1 : 3)";
+        if (lowerId == "open_affix") return "ModsInfo.Prefixes.Count < (Rarity == ItemRarity.Magic ? 1 : 3) || ModsInfo.Suffixes.Count < (Rarity == ItemRarity.Magic ? 1 : 3)";
 
         if (lowerId == "count_prefix") return $"ModsInfo.Prefixes.Count >= {threshold ?? 1}";
         if (lowerId == "count_suffix") return $"ModsInfo.Suffixes.Count >= {threshold ?? 1}";
