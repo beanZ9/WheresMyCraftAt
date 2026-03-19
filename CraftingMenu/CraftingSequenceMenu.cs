@@ -1,9 +1,10 @@
-﻿using ExileCore;
+using ExileCore;
 using ExileCore.Shared;
 using ExileCore.Shared.Enums;
 using ImGuiNET;
 using ItemFilterLibrary;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using SharpDX;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading;
 using WheresMyCraftAt.CraftingMenu.CraftofExileStructs;
 using WheresMyCraftAt.CraftingMenu.Styling;
@@ -38,6 +40,7 @@ public static class CraftingSequenceMenu
     private static string condEditValue = string.Empty;
 
     private static CoELang _coELang;
+    private static JObject _coeData;
     private static string _coeImportData = string.Empty;
 
     private static readonly Dictionary<string, (bool isCompiled, string errorMessage)> _filterCompilationCache
@@ -926,9 +929,8 @@ public static class CraftingSequenceMenu
 
                 if (!TryBuildStep(input, OrbApplicator, ItemCheckApplicator, stepIndex + 1, out var newStep))
                 {
-                    Logging.Logging.LogMessage(
-                        "CraftingSequenceMenu: Failed to build step due to ItemFilter compiler error, clearing entire crafting sequence and stopping any running operations.",
-                        LogMessageType.Error);
+                    DebugWindow.LogError(
+                        "CraftingSequenceMenu: Failed to build step due to ItemFilter compiler error, clearing entire crafting sequence and stopping any running operations.");
 
                     Main.SelectedCraftingSteps.Clear();
                     Main.Stop();
@@ -941,9 +943,8 @@ public static class CraftingSequenceMenu
             Main.SelectedCraftingSteps.Add(newCraftingBase);
         }
 
-        Logging.Logging.LogMessage(
-            $"CraftingSequenceMenu: {Main.SelectedCraftingSteps.Count} items added with a step count of {Main.SelectedCraftingSteps.FirstOrDefault()?.CraftingSteps.Count}",
-            LogMessageType.Info);
+        DebugWindow.LogMsg(
+            $"CraftingSequenceMenu: {Main.SelectedCraftingSteps.Count} items added with a step count of {Main.SelectedCraftingSteps.FirstOrDefault()?.CraftingSteps.Count}");
     }
 
     public static void ApplyStepsForCurrencyTab()
@@ -970,9 +971,8 @@ public static class CraftingSequenceMenu
 
             if (!TryBuildStep(input, OrbApplicator, ItemCheckApplicator, stepIndex + 1, out var newStep))
             {
-                Logging.Logging.LogMessage(
-                    "CraftingSequenceMenu: Failed to build step due to ItemFilter compiler error, clearing entire crafting sequence and stopping any running operations.",
-                    LogMessageType.Error);
+                DebugWindow.LogError(
+                    "CraftingSequenceMenu: Failed to build step due to ItemFilter compiler error, clearing entire crafting sequence and stopping any running operations.");
 
                 Main.SelectedCraftingSteps.Clear();
                 Main.Stop();
@@ -983,8 +983,8 @@ public static class CraftingSequenceMenu
         }
 
         Main.SelectedCraftingSteps.Add(newCraftingBase);
-        Logging.Logging.LogMessage(
-            $"CraftingSequenceMenu: Currency Tab Item Added with a step count of {newCraftingBase.CraftingSteps.Count}", LogMessageType.Info);
+        DebugWindow.LogMsg(
+            $"CraftingSequenceMenu: Currency Tab Item Added with a step count of {newCraftingBase.CraftingSteps.Count}");
     }
 
     private static bool TryBuildStep(CraftingStepInput input, Func<CancellationToken, SyncTask<bool>> method,
@@ -1071,14 +1071,14 @@ public static class CraftingSequenceMenu
                     ? $"Conditional Group {groupNumber} ({conditionGroup.GroupType})"
                     : $"{branchInfo} - Conditional Group {groupNumber} ({conditionGroup.GroupType})";
 
-                Logging.Logging.LogMessage(
+                DebugWindow.LogError(
                     $"CRAFTING SEQUENCE ERROR:\n" +
                     $"  Step {stepNumber}: '{stepDescription}'\n" +
                     $"  {locationDescription}\n" +
                     $"  Conditional {conditionalIndex + 1}: '{checkKey.Name}'\n" +
-                    $"  {itemFilterError}", LogMessageType.Error);
+                    $"  {itemFilterError}");
 
-                Logging.Logging.LogMessage("Clearing entire crafting sequence to prevent errors.", LogMessageType.Error);
+                DebugWindow.LogMsg("Clearing entire crafting sequence to prevent errors.");
                 return false;
             }
 
@@ -1195,17 +1195,17 @@ public static class CraftingSequenceMenu
 
             if (_fileSaveName == string.Empty)
             {
-                Logging.Logging.LogMessage("Attempted to save file without a name.", LogMessageType.Error);
+                DebugWindow.LogMsg("Attempted to save file without a name.");
             }
             else if (_files.Contains(_fileSaveName))
             {
                 ImGui.OpenPopup(OverwritePopup);
-                Logging.Logging.LogMessage($"File {_fileSaveName} already exists, requesting overwrite confirmation.", LogMessageType.Info);
+                DebugWindow.LogMsg($"File {_fileSaveName} already exists, requesting overwrite confirmation.");
             }
             else
             {
                 SaveFile(Main.Settings.NonUserData.SelectedCraftingStepInputs, $"{_fileSaveName}.json");
-                Logging.Logging.LogMessage($"File {_fileSaveName}.json saved successfully.", LogMessageType.Info);
+                DebugWindow.LogMsg($"File {_fileSaveName}.json saved successfully.");
             }
         }
 
@@ -1225,7 +1225,7 @@ public static class CraftingSequenceMenu
                     LoadFile(fileName);
 
                     _filterCompilationCache.Clear();
-                    Logging.Logging.LogMessage($"File {fileName} loaded successfully.", LogMessageType.Info);
+                    DebugWindow.LogMsg($"File {fileName} loaded successfully.");
                 }
 
                 if (isSelected)
@@ -1243,7 +1243,7 @@ public static class CraftingSequenceMenu
 
             if (!Directory.Exists(configDir))
             {
-                Logging.Logging.LogMessage("Unable to open config directory because it does not exist.", LogMessageType.Error);
+                DebugWindow.LogMsg("Unable to open config directory because it does not exist.");
             }
             else
             {
@@ -1254,14 +1254,14 @@ public static class CraftingSequenceMenu
                         Arguments = configDir
                     });
 
-                Logging.Logging.LogMessage("Opened config directory in explorer.", LogMessageType.Info);
+                DebugWindow.LogMsg("Opened config directory in explorer.");
             }
         }
 
         if (ShowButtonPopup(OverwritePopup, ["Are you sure?", "STOP"], out var saveSelectedIndex) && saveSelectedIndex == 0)
         {
             SaveFile(Main.Settings.NonUserData.SelectedCraftingStepInputs, $"{_fileSaveName}.json");
-            Logging.Logging.LogMessage($"File {_fileSaveName}.json saved successfully after overwrite confirmation.", LogMessageType.Info);
+            DebugWindow.LogMsg($"File {_fileSaveName}.json saved successfully after overwrite confirmation.");
         }
 
         ImGui.Unindent();
@@ -1299,10 +1299,12 @@ public static class CraftingSequenceMenu
 
         ImGui.Indent();
 
-        if (ImGui.Button("Refresh CoE Lang Data"))
+        if (ImGui.Button("Refresh CoE Data"))
         {
             FetchNewCoeLangData();
             LoadCoELangData();
+            FetchNewCoeDataData();
+            LoadCoEDataData();
         }
 
         ImGui.InputTextWithHint("##CoEImport", "Craft of Exile Export String..", ref _coeImportData, 10_000_000);
@@ -1312,6 +1314,10 @@ public static class CraftingSequenceMenu
             if (_coELang == null)
             {
                 LoadCoELangData();
+            }
+            if (_coeData == null)
+            {
+                LoadCoEDataData();
             }
 
             Main.Settings.NonUserData.SelectedCraftingStepInputs = ConvertCoEData(_coeImportData);
@@ -1327,10 +1333,22 @@ public static class CraftingSequenceMenu
         foreach (var config in coeSim.config)
         {
             var input = new CraftingStepInput();
-            if (config.method is {Count: > 1} && config.method[0].Equals("currency", StringComparison.OrdinalIgnoreCase))
+            if (config.method is {Count: > 1} && config.method[0]?.Equals("currency", StringComparison.OrdinalIgnoreCase) == true)
+            {
                 input.CurrencyItem = CoECurrencyDict.OrbNames.GetValueOrDefault(config.method[1], config.method[1]);
+            }
             else
-                input.CurrencyItem = "";
+            {
+                // Fallback inference if CoE didn't attach explicit currency
+                if (coeSim.settings?.rarity?.Equals("magic", StringComparison.OrdinalIgnoreCase) == true)
+                    input.CurrencyItem = "Orb of Alteration";
+                else if (coeSim.settings?.rarity?.Equals("rare", StringComparison.OrdinalIgnoreCase) == true)
+                    input.CurrencyItem = "Chaos Orb";
+                else if (coeSim.settings?.rarity?.Equals("normal", StringComparison.OrdinalIgnoreCase) == true)
+                    input.CurrencyItem = "Orb of Transmutation";
+                else
+                    input.CurrencyItem = "";
+            }
 
             input.AutomaticSuccess = config.autopass;
             if (config.actions != null)
@@ -1369,10 +1387,12 @@ public static class CraftingSequenceMenu
 
                     foreach (var cond in filter.conds)
                     {
+                        var rawModName = _coELang.mod.GetValueOrDefault(cond.id, cond.id);
+                        var cleanModName = Regex.Replace(rawModName, @"[#%+]+", "").Trim();
                         var ck = new ConditionalKeys
                         {
-                            Name = $"{_coELang.mod.GetValueOrDefault(cond.id, cond.id)} (min:{cond.treshold}{(cond.max != null ? $", max:{cond.max}" : "")})",
-                            Value = ""
+                            Name = $"{rawModName} (min:{cond.treshold}{(cond.max != null ? $", max:{cond.max}" : "")})",
+                            Value = GenerateLinqQuery(cond.id, cleanModName, cond.treshold)
                         };
 
                         group.Conditionals.Add(ck);
@@ -1382,7 +1402,7 @@ public static class CraftingSequenceMenu
                 }
             }
 
-            if (config.method is {Count: > 0} && config.method[0].Equals("check", StringComparison.OrdinalIgnoreCase))
+            if (config.method is {Count: > 0} && config.method[0]?.Equals("check", StringComparison.OrdinalIgnoreCase) == true)
                 input.CheckType = ConditionalCheckType.ConditionalCheckOnly;
             else
                 input.CheckType = ConditionalCheckType.ModifyThenCheck;
@@ -1391,6 +1411,93 @@ public static class CraftingSequenceMenu
         }
 
         return output;
+    }
+
+    private static string GenerateLinqQuery(string coeId, string cleanModName, long? threshold)
+    {
+        DebugWindow.LogMsg($"[GenerateLinqQuery] Generating query for coeId {coeId} and modName {cleanModName}");
+        var lowerId = coeId.ToLowerInvariant();
+        
+        if (lowerId == "open_prefix") return "ModsInfo.Prefixes.Count < 3";
+        if (lowerId == "open_suffix") return "ModsInfo.Suffixes.Count < 3";
+        if (lowerId == "open_affix") return "ModsInfo.Prefixes.Count < 3 || ModsInfo.Suffixes.Count < 3";
+
+        if (lowerId == "count_prefix") return $"ModsInfo.Prefixes.Count >= {threshold ?? 1}";
+        if (lowerId == "count_suffix") return $"ModsInfo.Suffixes.Count >= {threshold ?? 1}";
+        if (lowerId == "count_affix") return $"(ModsInfo.Prefixes.Count + ModsInfo.Suffixes.Count) >= {threshold ?? 1}";
+
+        long? globalMinRoll = null;
+        long? globalMaxRoll = null;
+
+        if (_coeData != null && threshold.HasValue && threshold.Value > 0)
+        {
+            var tiersToken = _coeData["tiers"]?[coeId];
+            if (tiersToken != null && tiersToken.HasValues)
+            {
+                var firstItemGroup = tiersToken.First as JProperty;
+                if (firstItemGroup != null && firstItemGroup.Value is JArray tiersArray)
+                {
+                    int totalTiers = tiersArray.Count;
+                    int coeTreshold = (int)threshold.Value;
+                    int targetTierIndex = totalTiers - coeTreshold;
+                    
+                    if (targetTierIndex >= 0 && targetTierIndex < totalTiers)
+                    {
+                        for (int i = targetTierIndex; i < totalTiers; i++)
+                        {
+                            var targetTierStr = tiersArray[i]?["nvalues"]?.ToString();
+                            if (!string.IsNullOrEmpty(targetTierStr) && targetTierStr.Length > 4)
+                            {
+                                try {
+                                    var cleanStr = targetTierStr.Replace("\r", "").Replace("\n", "").Replace(" ", "").Replace("[", "").Replace("]", "");
+                                    var split = cleanStr.Split(',');
+                                    long curMin = long.Parse(split[0]);
+                                    long curMax = split.Length > 1 ? long.Parse(split[1]) : curMin;
+
+                                    if (globalMinRoll == null || curMin < globalMinRoll.Value) globalMinRoll = curMin;
+                                    if (globalMaxRoll == null || curMax > globalMaxRoll.Value) globalMaxRoll = curMax;
+                                    if (globalMinRoll == null || curMax < globalMinRoll.Value) globalMinRoll = curMax;
+                                    if (globalMaxRoll == null || curMin > globalMaxRoll.Value) globalMaxRoll = curMin;
+                                } catch (Exception ex) {
+                                    DebugWindow.LogError($"[GenerateLinqQuery] Failed to parse nvalues '{targetTierStr}': {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+                }
+                else { DebugWindow.LogError($"[GenerateLinqQuery] Tiers format invalid for {coeId}"); }
+            }
+        }
+
+        string translationCheck;
+        var parts = cleanModName.Split(new[] { ',', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(p => p.Trim())
+                                .Where(p => !string.IsNullOrEmpty(p))
+                                .ToList();
+
+        if (parts.Count > 0)
+        {
+            var containsChecks = string.Join(" && ", parts.Select(p => $"x.Translation.Contains(\"{p}\", StringComparison.OrdinalIgnoreCase)"));
+            translationCheck = $"!string.IsNullOrEmpty(x.Translation) && {containsChecks}";
+        }
+        else
+        {
+            translationCheck = $"!string.IsNullOrEmpty(x.Translation) && x.Translation.Contains(\"{cleanModName}\", StringComparison.OrdinalIgnoreCase)";
+        }
+
+        if (globalMinRoll.HasValue && globalMaxRoll.HasValue)
+        {
+            var minLimit = Math.Min(globalMinRoll.Value, globalMaxRoll.Value);
+            var maxLimit = Math.Max(globalMinRoll.Value, globalMaxRoll.Value);
+
+            var tierQuery = $"ModsInfo.ExplicitMods.Any(x => {translationCheck} && x.Values.Any(v => (v >= {minLimit} && v <= {maxLimit}) || (v <= -{minLimit} && v >= -{maxLimit})))";
+            DebugWindow.LogMsg($"[GenerateLinqQuery] Success tier query: {tierQuery}");
+            return tierQuery;
+        }
+
+        var fallbackQuery = $"ModsInfo.ExplicitMods.Any(x => {translationCheck})";
+        DebugWindow.LogMsg($"[GenerateLinqQuery] Success fallback query: {fallbackQuery}");
+        return fallbackQuery;
     }
 
     private static void LoadCoELangData()
@@ -1406,11 +1513,65 @@ public static class CraftingSequenceMenu
 
             var fileContent = File.ReadAllText(fullPath);
             _coELang = JsonConvert.DeserializeObject<CoELang>(fileContent);
-            Logging.Logging.LogMessage($"[CoeLang] Loaded file from {coeLangJson} with {_coELang.mod.Count} mods", LogMessageType.Info);
+            DebugWindow.LogMsg($"[CoeLang] Loaded file from {coeLangJson} with {_coELang.mod.Count} mods");
         }
         catch (Exception e)
         {
-            Logging.Logging.LogMessage($"[CoeLang] Error loading file from {coeLangJson}: {e.Message}", LogMessageType.Error);
+            DebugWindow.LogError($"[CoeLang] Error loading file from {coeLangJson}: {e.Message}");
+        }
+    }
+
+    private static void LoadCoEDataData()
+    {
+        var coeDataJson = "coe_data.json";
+        var fullPath = Path.Combine(Main.DirectoryFullName, "ExternalData", coeDataJson);
+        try
+        {
+            if (!File.Exists(fullPath))
+            {
+                FetchNewCoeDataData();
+            }
+
+            var fileContent = File.ReadAllText(fullPath);
+            _coeData = JObject.Parse(fileContent);
+            DebugWindow.LogMsg($"[CoeData] Loaded file from {coeDataJson}");
+        }
+        catch (Exception e)
+        {
+            DebugWindow.LogError($"[CoeData] Error loading file from {coeDataJson}: {e.Message}");
+        }
+    }
+
+    private static void FetchNewCoeDataData()
+    {
+        const string url = "https://www.craftofexile.com/json/data/main/poec_data.json";
+        const string prefix = "poecd=";
+        const string coeDataJson = "coe_data.json";
+        var fullPath = Path.Combine(Main.DirectoryFullName, "ExternalData", coeDataJson);
+
+        Directory.CreateDirectory(Path.Combine(Main.DirectoryFullName, "ExternalData"));
+
+        try
+        {
+            using var client = new WebClient();
+            var content = client.DownloadString(url);
+
+            if (content.StartsWith(prefix))
+            {
+                content = content[prefix.Length..];
+                if (content.EndsWith(";"))
+                {
+                    content = content[..^1];
+                }
+            }
+
+            File.WriteAllText(fullPath, content);
+
+            DebugWindow.LogMsg($"[CoeData] Fetched new JSON from remote URL and saved to {coeDataJson}");
+        }
+        catch (Exception e)
+        {
+            DebugWindow.LogError($"[CoeData] Error fetching remote JSON: {e.Message}");
         }
     }
 
@@ -1431,15 +1592,19 @@ public static class CraftingSequenceMenu
             if (content.StartsWith(prefix))
             {
                 content = content[prefix.Length..];
+                if (content.EndsWith(";"))
+                {
+                    content = content[..^1];
+                }
             }
 
             File.WriteAllText(fullPath, content);
 
-            Logging.Logging.LogMessage($"[CoeLang] Fetched new JSON from remote URL and saved to {coeLangJson}", LogMessageType.Info);
+            DebugWindow.LogMsg($"[CoeLang] Fetched new JSON from remote URL and saved to {coeLangJson}");
         }
         catch (Exception e)
         {
-            Logging.Logging.LogMessage($"[CoeLang] Error fetching remote JSON: {e.Message}", LogMessageType.Error);
+            DebugWindow.LogError($"[CoeLang] Error fetching remote JSON: {e.Message}");
         }
     }
 
