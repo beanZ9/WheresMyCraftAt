@@ -1426,6 +1426,17 @@ public static class CraftingSequenceMenu
         if (lowerId == "count_suffix") return $"ModsInfo.Suffixes.Count >= {threshold ?? 1}";
         if (lowerId == "count_affix") return $"(ModsInfo.Prefixes.Count + ModsInfo.Suffixes.Count) >= {threshold ?? 1}";
 
+        if (lowerId == "count_iprefix") return $"ModsInfo.Prefixes.Count(e => e.ModRecord.InfluenceType != \"None\") >= {threshold ?? 1}";
+        if (lowerId == "count_isuffix") return $"ModsInfo.Suffixes.Count(e => e.ModRecord.InfluenceType != \"None\") >= {threshold ?? 1}";
+        if (lowerId == "count_iaffix") return $"(ModsInfo.Prefixes.Count(e => e.ModRecord.InfluenceType != \"None\") + ModsInfo.Suffixes.Count(e => e.ModRecord.InfluenceType != \"None\")) >= {threshold ?? 1}";
+
+        if (lowerId == "veiled_prefix") return $"ModsInfo.Prefixes.Count(e => e.DisplayName.Contains(\"Veil\")) >= {threshold ?? 1}";
+        if (lowerId == "veiled_suffix") return $"ModsInfo.Suffixes.Count(e => e.DisplayName.Contains(\"Veil\")) >= {threshold ?? 1}";
+        
+        if (lowerId == "pseudo_quantity") return $"ItemStats[GameStat.MapItemDropQuantityPct] >= {threshold ?? 1}";
+        if (lowerId == "pseudo_rarity") return $"ItemStats[GameStat.MapItemDropRarityPct] >= {threshold ?? 1}";
+        if (lowerId == "pseudo_packsize") return $"ItemStats[GameStat.MapPackSizePct] >= {threshold ?? 1}";
+
         long? globalMinRoll = null;
         long? globalMaxRoll = null;
 
