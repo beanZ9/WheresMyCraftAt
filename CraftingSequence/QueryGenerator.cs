@@ -3,9 +3,9 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 
-namespace WheresMyCraftAt.CraftingMenu;
+namespace WheresMyCraftAt.CraftingSequence;
 
-public static class CraftingSequenceQueryGenerator
+public static class QueryGenerator
 {
     public static string GenerateLinqQuery(string coeId, string cleanModName, long? threshold, JObject coeData)
     {

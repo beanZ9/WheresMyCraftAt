@@ -22,7 +22,7 @@ using static WheresMyCraftAt.CraftingSequence.CraftingSequence;
 using static WheresMyCraftAt.Enums.WheresMyCraftAt;
 using static WheresMyCraftAt.WheresMyCraftAt;
 using Vector2 = System.Numerics.Vector2;
-
+using WheresMyCraftAt.CraftingSequence;
 namespace WheresMyCraftAt.CraftingMenu;
 
 public static class CraftingSequenceMenu
@@ -1392,7 +1392,7 @@ public static class CraftingSequenceMenu
                         var ck = new ConditionalKeys
                         {
                             Name = $"{rawModName} (min:{cond.treshold}{(cond.max != null ? $", max:{cond.max}" : "")})",
-                            Value = CraftingSequenceQueryGenerator.GenerateLinqQuery(cond.id, cleanModName, cond.treshold, _coeData)
+                            Value = QueryGenerator.GenerateLinqQuery(cond.id, cleanModName, cond.treshold, _coeData)
                         };
 
                         group.Conditionals.Add(ck);
