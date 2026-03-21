@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace WheresMyCraftAt.CraftingSequence;
 
-public static class QueryGenerator
+public static class CoEQueryConverter
 {
     public static string GenerateLinqQuery(string coeId, string cleanModName, long? threshold, JObject coeData)
     {

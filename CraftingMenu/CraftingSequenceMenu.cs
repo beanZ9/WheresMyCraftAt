@@ -1392,7 +1392,7 @@ public static class CraftingSequenceMenu
                         var ck = new ConditionalKeys
                         {
                             Name = $"{rawModName} (min:{cond.treshold}{(cond.max != null ? $", max:{cond.max}" : "")})",
-                            Value = QueryGenerator.GenerateLinqQuery(cond.id, cleanModName, cond.treshold, _coeData)
+                            Value = CoEQueryConverter.GenerateLinqQuery(cond.id, cleanModName, cond.treshold, _coeData)
                         };
 
                         group.Conditionals.Add(ck);
