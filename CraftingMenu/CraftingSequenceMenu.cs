@@ -14,6 +14,7 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
+using ExileCore.Shared.Cache;
 using WheresMyCraftAt.CraftingMenu.CraftofExileStructs;
 using WheresMyCraftAt.CraftingMenu.Styling;
 using WheresMyCraftAt.Extensions;
@@ -1182,6 +1183,18 @@ public static class CraftingSequenceMenu
         }
     }
 
+    private static readonly CachedValue<List<string>> LoadFilesCache = new TimeCache<List<string>>(CacheUtils.RememberLastValue<List<string>>((prev) =>
+    {
+        var newValue = GetFiles();
+        if (prev?.ToHashSet().SetEquals(newValue) == true)
+        {
+            return prev;
+        }
+
+        return newValue;
+    }), 1000);
+    private static string _loadFilesFilter = "";
+
     private static void DrawFileOptions()
     {
         if (!ImGui.CollapsingHeader("Load / Save", ImGuiTreeNodeFlags.DefaultOpen))
@@ -1214,30 +1227,17 @@ public static class CraftingSequenceMenu
 
         ImGui.Separator();
 
-        if (ImGui.BeginCombo("Load File", _selectedFileName))
+        if (ImGuiHelpers.SearchCombobox("Load file", ref _loadFilesFilter, ref _selectedFileName, LoadFilesCache.Value, ImGuiHelpers.WhitespaceSeparatedContains))
         {
-            _files = GetFiles();
+            _fileSaveName = _selectedFileName;
+            LoadFile(_selectedFileName);
 
-            foreach (var fileName in _files)
-            {
-                var isSelected = _selectedFileName == fileName;
-                if (ImGui.Selectable(fileName, isSelected))
-                {
-                    _selectedFileName = fileName;
-                    _fileSaveName = fileName;
-                    LoadFile(fileName);
-
-                    _filterCompilationCache.Clear();
-                    Logging.Logging.LogMessage($"File {fileName} loaded successfully.", LogMessageType.Info);
-                }
-
-                if (isSelected)
-                    ImGui.SetItemDefaultFocus();
-            }
-
-            ImGui.EndCombo();
+            _filterCompilationCache.Clear();
+            Logging.Logging.LogMessage($"File {_selectedFileName} loaded successfully.", LogMessageType.Info);
         }
-
+        ImGui.SameLine();
+        ImGui.Text("Load file");
+        
         ImGui.Separator();
 
         if (ImGui.Button("Open Crafting Template Folder"))
