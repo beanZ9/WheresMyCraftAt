@@ -308,6 +308,10 @@ public static class CraftingSequenceMenu
                 {
                     var description = $"Step {s + 1} - ";
                     description += GetStepText(steps[s]);
+                    if (stepIndex == dropdownIndex)
+                    {
+                        description = $"(LOOP) {description}";
+                    }
 
                     stepNames.Add(description);
                 }
@@ -342,16 +346,20 @@ public static class CraftingSequenceMenu
             var stepNames = new List<string>();
             for (var s = 0; s < steps.Count; s++)
             {
-                if (s != stepIndex)
+                if (s != stepIndex || stepIndex == dropdownIndex)
                 {
                     var description = $"Step {s + 1} - ";
                     description += GetStepText(steps[s]);
+                    if (stepIndex == dropdownIndex)
+                    {
+                        description = $"(LOOP) {description}";
+                    }
 
                     stepNames.Add(description);
                 }
             }
 
-            dropdownIndex = dropdownIndex >= stepIndex && dropdownIndex < steps.Count ? dropdownIndex - 1 : dropdownIndex;
+            dropdownIndex = dropdownIndex > stepIndex && dropdownIndex < steps.Count ? dropdownIndex - 1 : dropdownIndex;
             var comboItems = string.Join('\0', stepNames) + '\0';
 
             if (ImGui.Combo("##FailureStepIndex", ref dropdownIndex, comboItems, stepNames.Count))
@@ -416,16 +424,20 @@ public static class CraftingSequenceMenu
             var stepNames = new List<string>();
             for (var s = 0; s < steps.Count; s++)
             {
-                if (s != stepIndex)
+                if (s != stepIndex || stepIndex == dropdownIndex)
                 {
                     var description = $"Step {s + 1} - ";
                     description += GetStepText(steps[s]);
+                    if (stepIndex == dropdownIndex)
+                    {
+                        description = $"(LOOP) {description}";
+                    }
 
                     stepNames.Add(description);
                 }
             }
 
-            dropdownIndex = dropdownIndex >= stepIndex && dropdownIndex < steps.Count ? dropdownIndex - 1 : dropdownIndex;
+            dropdownIndex = dropdownIndex > stepIndex && dropdownIndex < steps.Count ? dropdownIndex - 1 : dropdownIndex;
             var comboItems = string.Join('\0', stepNames) + '\0';
 
             if (ImGui.Combo("##MatchStepIndex", ref dropdownIndex, comboItems, stepNames.Count))
