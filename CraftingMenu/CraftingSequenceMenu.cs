@@ -858,7 +858,8 @@ public static class CraftingSequenceMenu
             return;
 
         ImGui.Indent();
-
+        var stepCount = Main.SelectedCraftingSteps.FirstOrDefault()?.CraftingSteps.Count;
+        ImGui.TextWrapped($"Steps applied: {Main.SelectedCraftingSteps.Count} items, {stepCount ?? 0} steps for the first one");
         if (ImGui.Button("[+] Apply Steps"))
         {
             Main.SelectedCraftingSteps.Clear();
@@ -895,12 +896,16 @@ public static class CraftingSequenceMenu
     public static void ApplyStepsForInventory()
     {
         var itemsInInventory = InventoryHandler.TryGetValidCraftingItemsFromAnInventory(InventorySlotE.MainInventory1).ToList();
+        var filter = GetInventoryFilterQuery();
 
         for (var col = 0; col < 12; col++)
         for (var row = 0; row < 5; row++)
         {
             var isValidAndSelected = itemsInInventory.Any(item => item.PosX == col && item.PosY == row) &&
-                Main.Settings.RunOptions.InventoryCraftingSlots[row, col] == 1;
+                                     Main.Settings.RunOptions.InventoryCraftingSlots[row, col] == 1 &&
+                                     (filter == null ||
+                                      InventoryHandler.TryGetInventoryItemFromSlot(new Vector2(col, row), out var item) &&
+                                      FilterHandler.IsItemMatchingCondition(item.Item, new ItemFilter([filter])));
 
             if (!isValidAndSelected)
                 continue;
@@ -948,6 +953,21 @@ public static class CraftingSequenceMenu
         Logging.Logging.LogMessage(
             $"CraftingSequenceMenu: {Main.SelectedCraftingSteps.Count} items added with a step count of {Main.SelectedCraftingSteps.FirstOrDefault()?.CraftingSteps.Count}",
             LogMessageType.Info);
+    }
+
+    public static ItemQuery GetInventoryFilterQuery()
+    {
+        ItemQuery filter = null;
+        if (Main.Settings.RunOptions.ApplyFilter && !string.IsNullOrWhiteSpace(Main.Settings.RunOptions.InventoryFilter.Value))
+        {
+            filter = ItemQuery.Load(Main.Settings.RunOptions.InventoryFilter.Value);
+            if (filter.Error != null)
+            {
+                throw new Exception($"Inventory filter load error: {filter.Error}");
+            }
+        }
+
+        return filter;
     }
 
     public static void ApplyStepsForCurrencyTab()

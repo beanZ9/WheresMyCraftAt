@@ -10,6 +10,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+using ExileCore;
+using ItemFilterLibrary;
+using WheresMyCraftAt.CraftingMenu;
+using WheresMyCraftAt.CraftingSequence;
 using WheresMyCraftAt.Handlers;
 using Vector2 = System.Numerics.Vector2;
 
@@ -36,6 +40,15 @@ public class RunOptions
     public HotkeyNode RunButton { get; set; } = Keys.NumPad6;
     public ToggleNode CraftInventoryInsteadOfCurrencyTab { get; set; } = new(false);
 
+    [ConditionalDisplay(nameof(CraftInventoryInsteadOfCurrencyTab))]
+    public TextNode InventoryFilter { get; set; } = new("");
+
+    [ConditionalDisplay(nameof(CraftInventoryInsteadOfCurrencyTab))]
+    public ToggleNode ApplyFilter { get; set; } = new(false);
+
+    [ConditionalDisplay(nameof(CraftInventoryInsteadOfCurrencyTab))]
+    public ButtonNode ToggleAll { get; set; } = new();
+
     [JsonIgnore]
     [ConditionalDisplay(nameof(CraftInventoryInsteadOfCurrencyTab))]
     public CustomNode InventorySectionSelector { get; }
@@ -43,13 +56,60 @@ public class RunOptions
 
     public RunOptions(StylingDooDads Styling)
     {
+        ToggleAll.OnPressed = () =>
+        {
+            var anyToggled = false;
+            for (int row = 0; row < 5 && !anyToggled; row++)
+            {
+                for (int column = 0; column < 12; column++)
+                {
+                    if (InventoryCraftingSlots[row, column] == 1)
+                    {
+                        anyToggled = true;
+                        break;
+                    }
+                }
+            }
+
+            for (int row = 0; row < 5; row++)
+            {
+                for (int column = 0; column < 12; column++)
+                {
+                    InventoryCraftingSlots[row, column] = anyToggled ? 0 : 1;
+                }
+            }
+        };
+
         InventorySectionSelector = new CustomNode
         {
             DrawDelegate = () =>
             {
                 ImGui.Separator();
                 ImGui.TextWrapped("Select the top left slot each item occupies in the inventory you want crafted on.\nI highly advise Styling be enabled to visually see what slots are considered valid positions otherwise you will only get a tooltip when it is hovered.");
+
                 var itemsInInventory = InventoryHandler.TryGetValidCraftingItemsFromAnInventory(InventorySlotE.MainInventory1).ToList();
+                ItemFilter filter = null;
+                if (ApplyFilter)
+                {
+                    ItemQuery query = null;
+                    try
+                    {
+                        query = CraftingSequenceMenu.GetInventoryFilterQuery();
+                    }
+                    catch (Exception ex)
+                    {
+                        using (ImGuiHelpers.UseStyleColor(ImGuiCol.Text, Color.Red.ToImgui()))
+                        {
+                            ImGui.TextWrapped($"Query failed to load: {ex.Message}");
+                        }
+                    }
+
+                    if (query != null)
+                    {
+                        filter = new ItemFilter([query]);
+                    }
+                }
+            
 
                 var numb = 1;
                 ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, 1));
@@ -62,7 +122,12 @@ public class RunOptions
                         var isValidItemInSlot = itemsInInventory.Any(item => item.PosX == col && item.PosY == row);
                         if (isValidItemInSlot && Styling.CustomMenuStyling)
                         {
-                            ImGui.PushStyleColor(ImGuiCol.FrameBg, Styling.InventoryVisualizer.BackgroundNormal.Value.ToImgui());
+                            var isFiltered = ApplyFilter &&
+                                             filter != null &&
+                                             InventoryHandler.TryGetInventoryItemFromSlot(new Vector2(col, row), out var item) &&
+                                             FilterHandler.IsItemMatchingCondition(item.Item, filter);
+                            ImGui.PushStyleColor(ImGuiCol.FrameBg,
+                                isFiltered ? Styling.InventoryVisualizer.Filtered.Value.ToImgui() : Styling.InventoryVisualizer.BackgroundNormal.Value.ToImgui());
                             ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, Styling.InventoryVisualizer.BackgroundHovered.Value.ToImgui());
                             ImGui.PushStyleColor(ImGuiCol.FrameBgActive, Styling.InventoryVisualizer.BackgroundActive.Value.ToImgui());
                         }
@@ -71,8 +136,8 @@ public class RunOptions
                         if (ImGui.Checkbox("", ref toggled))
                         {
                             InventoryCraftingSlots[row, col] ^= 1;
-
                         }
+
                         if (isValidItemInSlot && ImGui.IsItemHovered())
                         {
                             ImGui.BeginTooltip();
@@ -111,7 +176,7 @@ public class NonUser
     public List<CraftingSequence.CraftingSequence.CraftingStepInput> SelectedCraftingStepInputs { get; set; } = [];
 }
 
-[Submenu(CollapsedByDefault = false)]
+[Submenu(CollapsedByDefault = true)]
 public class DelayOptions
 {
     public RangeNode<Vector2> MinMaxRandomDelayMS { get; set; } = new(
@@ -125,7 +190,7 @@ public class DelayOptions
     public RangeNode<int> ActionTimeoutInSeconds { get; set; } = new(2, 1, 3);
 }
 
-[Submenu(CollapsedByDefault = false)]
+[Submenu(CollapsedByDefault = true)]
 public class DebugOptions
 {
     public Dictionary<Enums.WheresMyCraftAt.LogMessageType, (bool enabled, Color color)> LogMessageFilters = [];
@@ -182,6 +247,7 @@ public class InventoryVisualizerGroupStyle
     public ColorNode BackgroundNormal { get; set; } = new(new Color(209, 209, 209, 60));
     public ColorNode BackgroundHovered { get; set; } = new(new Color(152, 128, 34, 178));
     public ColorNode BackgroundActive { get; set; } = new(new Color(152, 128, 34, 240));
+    public ColorNode Filtered { get; set; } = new(Color.Pink);
 }
 
 [Submenu]
