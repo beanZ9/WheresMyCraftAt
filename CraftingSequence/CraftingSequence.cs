@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
+using ExileCore;
 using static ExileCore.PoEMemory.MemoryObjects.ServerInventory;
 using static WheresMyCraftAt.WheresMyCraftAt;
 
@@ -62,6 +63,7 @@ public class CraftingSequence
             var jsonString = JsonConvert.SerializeObject(input, Formatting.Indented);
             File.WriteAllText(fullPath, jsonString);
             Logging.Logging.LogMessage($"Successfully saved file to {fullPath}.", Enums.WheresMyCraftAt.LogMessageType.Info);
+            DebugWindow.LogMsg($"File {fullPath} saved successfully.");
         }
         catch (Exception e)
         {

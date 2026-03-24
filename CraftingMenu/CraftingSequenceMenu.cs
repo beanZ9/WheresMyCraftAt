@@ -929,8 +929,9 @@ public static class CraftingSequenceMenu
 
                 if (!TryBuildStep(input, OrbApplicator, ItemCheckApplicator, stepIndex + 1, out var newStep))
                 {
-                    DebugWindow.LogError(
-                        "CraftingSequenceMenu: Failed to build step due to ItemFilter compiler error, clearing entire crafting sequence and stopping any running operations.");
+                    Logging.Logging.LogMessage(
+                        "CraftingSequenceMenu: Failed to build step due to ItemFilter compiler error, clearing entire crafting sequence and stopping any running operations.",
+                        LogMessageType.Error);
 
                     Main.SelectedCraftingSteps.Clear();
                     Main.Stop();
@@ -943,8 +944,9 @@ public static class CraftingSequenceMenu
             Main.SelectedCraftingSteps.Add(newCraftingBase);
         }
 
-        DebugWindow.LogMsg(
-            $"CraftingSequenceMenu: {Main.SelectedCraftingSteps.Count} items added with a step count of {Main.SelectedCraftingSteps.FirstOrDefault()?.CraftingSteps.Count}");
+        Logging.Logging.LogMessage(
+            $"CraftingSequenceMenu: {Main.SelectedCraftingSteps.Count} items added with a step count of {Main.SelectedCraftingSteps.FirstOrDefault()?.CraftingSteps.Count}",
+            LogMessageType.Info);
     }
 
     public static void ApplyStepsForCurrencyTab()
@@ -971,8 +973,9 @@ public static class CraftingSequenceMenu
 
             if (!TryBuildStep(input, OrbApplicator, ItemCheckApplicator, stepIndex + 1, out var newStep))
             {
-                DebugWindow.LogError(
-                    "CraftingSequenceMenu: Failed to build step due to ItemFilter compiler error, clearing entire crafting sequence and stopping any running operations.");
+                Logging.Logging.LogMessage(
+                    "CraftingSequenceMenu: Failed to build step due to ItemFilter compiler error, clearing entire crafting sequence and stopping any running operations.",
+                    LogMessageType.Error);
 
                 Main.SelectedCraftingSteps.Clear();
                 Main.Stop();
@@ -983,8 +986,8 @@ public static class CraftingSequenceMenu
         }
 
         Main.SelectedCraftingSteps.Add(newCraftingBase);
-        DebugWindow.LogMsg(
-            $"CraftingSequenceMenu: Currency Tab Item Added with a step count of {newCraftingBase.CraftingSteps.Count}");
+        Logging.Logging.LogMessage(
+            $"CraftingSequenceMenu: Currency Tab Item Added with a step count of {newCraftingBase.CraftingSteps.Count}", LogMessageType.Info);
     }
 
     private static bool TryBuildStep(CraftingStepInput input, Func<CancellationToken, SyncTask<bool>> method,
@@ -1071,14 +1074,14 @@ public static class CraftingSequenceMenu
                     ? $"Conditional Group {groupNumber} ({conditionGroup.GroupType})"
                     : $"{branchInfo} - Conditional Group {groupNumber} ({conditionGroup.GroupType})";
 
-                DebugWindow.LogError(
+                Logging.Logging.LogMessage(
                     $"CRAFTING SEQUENCE ERROR:\n" +
                     $"  Step {stepNumber}: '{stepDescription}'\n" +
                     $"  {locationDescription}\n" +
                     $"  Conditional {conditionalIndex + 1}: '{checkKey.Name}'\n" +
-                    $"  {itemFilterError}");
+                    $"  {itemFilterError}", LogMessageType.Error);
 
-                DebugWindow.LogMsg("Clearing entire crafting sequence to prevent errors.");
+                Logging.Logging.LogMessage("Clearing entire crafting sequence to prevent errors.", LogMessageType.Error);
                 return false;
             }
 
@@ -1195,17 +1198,17 @@ public static class CraftingSequenceMenu
 
             if (_fileSaveName == string.Empty)
             {
-                DebugWindow.LogMsg("Attempted to save file without a name.");
+                Logging.Logging.LogMessage("Attempted to save file without a name.", LogMessageType.Error);
             }
             else if (_files.Contains(_fileSaveName))
             {
                 ImGui.OpenPopup(OverwritePopup);
-                DebugWindow.LogMsg($"File {_fileSaveName} already exists, requesting overwrite confirmation.");
+                Logging.Logging.LogMessage($"File {_fileSaveName} already exists, requesting overwrite confirmation.", LogMessageType.Info);
             }
             else
             {
                 SaveFile(Main.Settings.NonUserData.SelectedCraftingStepInputs, $"{_fileSaveName}.json");
-                DebugWindow.LogMsg($"File {_fileSaveName}.json saved successfully.");
+                Logging.Logging.LogMessage($"File {_fileSaveName}.json saved successfully.", LogMessageType.Info);
             }
         }
 
@@ -1225,7 +1228,7 @@ public static class CraftingSequenceMenu
                     LoadFile(fileName);
 
                     _filterCompilationCache.Clear();
-                    DebugWindow.LogMsg($"File {fileName} loaded successfully.");
+                    Logging.Logging.LogMessage($"File {fileName} loaded successfully.", LogMessageType.Info);
                 }
 
                 if (isSelected)
@@ -1243,7 +1246,7 @@ public static class CraftingSequenceMenu
 
             if (!Directory.Exists(configDir))
             {
-                DebugWindow.LogMsg("Unable to open config directory because it does not exist.");
+                Logging.Logging.LogMessage("Unable to open config directory because it does not exist.", LogMessageType.Error);
             }
             else
             {
@@ -1254,14 +1257,14 @@ public static class CraftingSequenceMenu
                         Arguments = configDir
                     });
 
-                DebugWindow.LogMsg("Opened config directory in explorer.");
+                Logging.Logging.LogMessage("Opened config directory in explorer.", LogMessageType.Info);
             }
         }
 
         if (ShowButtonPopup(OverwritePopup, ["Are you sure?", "STOP"], out var saveSelectedIndex) && saveSelectedIndex == 0)
         {
             SaveFile(Main.Settings.NonUserData.SelectedCraftingStepInputs, $"{_fileSaveName}.json");
-            DebugWindow.LogMsg($"File {_fileSaveName}.json saved successfully after overwrite confirmation.");
+            Logging.Logging.LogMessage($"File {_fileSaveName}.json saved successfully after overwrite confirmation.", LogMessageType.Info);
         }
 
         ImGui.Unindent();
@@ -1430,7 +1433,7 @@ public static class CraftingSequenceMenu
         }
         catch (Exception e)
         {
-            DebugWindow.LogError($"[CoeLang] Error loading file from {coeLangJson}: {e.Message}");
+            Logging.Logging.LogMessage($"[CoeLang] Error loading file from {coeLangJson}: {e.Message}", LogMessageType.Error);
         }
     }
 
@@ -1513,11 +1516,11 @@ public static class CraftingSequenceMenu
 
             File.WriteAllText(fullPath, content);
 
-            DebugWindow.LogMsg($"[CoeLang] Fetched new JSON from remote URL and saved to {coeLangJson}");
+            Logging.Logging.LogMessage($"[CoeLang] Fetched new JSON from remote URL and saved to {coeLangJson}", LogMessageType.Info);
         }
         catch (Exception e)
         {
-            DebugWindow.LogError($"[CoeLang] Error fetching remote JSON: {e.Message}");
+            Logging.Logging.LogMessage($"[CoeLang] Error fetching remote JSON: {e.Message}", LogMessageType.Error);
         }
     }
 

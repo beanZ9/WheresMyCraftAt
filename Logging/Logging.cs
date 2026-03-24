@@ -155,7 +155,8 @@ public static class Logging
         {
             var color = Main.Settings.Debugging.LogMessageFilters[messageType].color;
 
-            if (Main.Settings.Debugging.PrintTopLeft)
+            if (Main.Settings.Debugging.PrintTopLeft || 
+                messageType is LogMessageType.Critical or LogMessageType.Warning or LogMessageType.Error)
             {
                 DebugWindow.LogMsg(msg, Main.Settings.Debugging.PrintLingerTime, color);
             }
