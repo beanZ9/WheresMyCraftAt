@@ -35,7 +35,7 @@ public class WheresMyCraftAt : BaseSettingsPlugin<WheresMyCraftAtSettings>
     public SyncTask<bool> CurrentOperation;
     public Dictionary<int, (int passCount, int failCount, int totalCount)> CurrentOperationStepCountList = [];
     public int[,] CompletedCrafts = new int[5, 12];
-    public Dictionary<string, int> CurrentOperationUsedItemsList = [];
+    public Dictionary<string, int> CurrentOperationUsedItemsList = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
     private List<Keys> keysToRelease = [];
     public CancellationTokenSource OperationCts;
     public List<CraftingBase> SelectedCraftingSteps = [];

@@ -1,4 +1,5 @@
-﻿using ExileCore.PoEMemory.Components;
+﻿using System;
+using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.Elements.InventoryElements;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared;
@@ -107,7 +108,7 @@ public static class ItemHandler
 
     public static void UpdateUsedItemDictionary(string currencyName)
     {
-        Main.CurrentOperationUsedItemsList ??= [];
+        Main.CurrentOperationUsedItemsList ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         if (Main.CurrentOperationUsedItemsList.TryGetValue(currencyName, out var currentCount))
         {

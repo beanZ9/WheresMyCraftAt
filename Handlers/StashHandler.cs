@@ -37,7 +37,7 @@ public static class StashHandler
         if (TryGetVisibleStashInventory(out var stashContents))
         {
             Logging.Logging.LogMessage($"Items in stash: {stashContents.Count}", Enums.WheresMyCraftAt.LogMessageType.Info);
-            foundItem = stashContents.FirstOrDefault(item => ItemHandler.GetBaseNameFromItem(item) == baseName);
+            foundItem = stashContents.FirstOrDefault(item => ItemHandler.GetBaseNameFromItem(item)?.Equals(baseName, StringComparison.OrdinalIgnoreCase) == true);
         }
 
         if (foundItem == null)
