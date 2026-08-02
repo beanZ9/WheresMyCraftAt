@@ -241,7 +241,7 @@ public class CraftingSequenceExecutor(IEnumerable<CraftingBase> itemsToSequence)
 
     private static async SyncTask<bool> EvaluateConditionsAsync(List<ConditionalChecksGroup> groups, CancellationToken cancellationToken)
     {
-        var andResult = true; // Start true for AND logic
+        var hasOrGroup = false;
         var orResult = false; // Start false for OR logic
 
         foreach (var group in groups)
@@ -258,12 +258,19 @@ public class CraftingSequenceExecutor(IEnumerable<CraftingBase> itemsToSequence)
             switch (group.GroupType)
             {
                 case ConditionGroup.AND:
-                    andResult &= trueCount.trueCount >= group.ConditionalsToBePassForSuccess;
+                    var andResult = trueCount.trueCount >= group.ConditionalsToBePassForSuccess;
 
                     Logging.Logging.LogMessage($"AND Group Result: {andResult} (True Count: {trueCount.trueCount}, Required: {group.ConditionalsToBePassForSuccess})", LogMessageType.Evaluation);
 
+                    if (!andResult)
+                    {
+                        Logging.Logging.LogMessage("Exiting early due to AND group result being false", LogMessageType.Evaluation);
+                        return false;
+                    }
+
                     break;
                 case ConditionGroup.OR:
+                    hasOrGroup = true;
                     orResult |= trueCount.trueCount >= group.ConditionalsToBePassForSuccess;
 
                     Logging.Logging.LogMessage($"OR Group Result: {orResult} (True Count: {trueCount.trueCount}, Required: {group.ConditionalsToBePassForSuccess})", LogMessageType.Evaluation);
@@ -281,15 +288,9 @@ public class CraftingSequenceExecutor(IEnumerable<CraftingBase> itemsToSequence)
 
                     break;
             }
-
-            if (!andResult)
-            {
-                Logging.Logging.LogMessage("Exiting early due to AND group result being false", LogMessageType.Evaluation);
-                return false;
-            }
         }
 
-        var combinedResult = andResult || orResult;
+        var combinedResult = !hasOrGroup || orResult;
         Logging.Logging.LogMessage($"Final Combined Result: {combinedResult}", LogMessageType.Evaluation);
         return combinedResult;
     }
